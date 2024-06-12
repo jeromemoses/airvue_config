@@ -70,6 +70,7 @@ void sys_startup()
 
   // power button LED pin declaration
   pinMode(BUT_LED_PIN, OUTPUT);
+  BUT_LED(1);
 
   //input button pin initialization
   pinMode(BUT_PIN, INPUT);

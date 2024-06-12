@@ -1,5 +1,8 @@
 # ChangeLog for Airvue_config LIB
 
+## [1.1.3] - 2024-6-12
+### fixed But led to turns-ON on sys_startup() itself
+
 ## [1.1.2] - 2024-6-12
 ### defined button input
 

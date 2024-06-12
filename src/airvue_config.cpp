@@ -516,3 +516,9 @@ void read_VEML7700(int LUX_CHANNEL, float *result)
     //Serial.println("** High threshold");
   }
 }
+
+void goToPowerOff() 
+{
+  Serial.println("Sleep triggered : )");
+  esp_deep_sleep_start();
+}

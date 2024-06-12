@@ -93,8 +93,6 @@ void sys_startup()
     MUX_SERIAL.write(ps_start_QAmode_cmd[i]);
   }
 #endif
-
-  delay(1000);
   return;
 }
 

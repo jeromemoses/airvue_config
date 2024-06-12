@@ -48,12 +48,12 @@ int BUT_LED(bool is_on)
 {
   if (is_on == 1)
   {
-    analogWrite(BUT_LED_PIN, 50);
+    analogWrite(BUT_LED_PIN, 25);
     return 1;
   }
   else
   {
-    digitalWrite(BUT_LED_PIN, LOW);
+    analogWrite(BUT_LED_PIN, 0);
     return 1;
   }
 }

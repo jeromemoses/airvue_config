@@ -7,6 +7,7 @@
 #define MUX_SS2 15
 #define MUX_SS3 19
 #define SENSOR_BAUDRATE 9600 //sensors baud rate
+#define BUT_PIN 33
 
 #define SENSOR_SERIAL_ENABLE //define SENSOR_SERIAL_ENABLE when using sensor on UART on multiplexer
 //#undef SENSOR_SERIAL_ENABLE  //command this when using sensor UART on multiplexer

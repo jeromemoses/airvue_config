@@ -188,6 +188,9 @@ void read_ch2o(float *CH2O)
 {
 read_again:
 {
+  MUX_SERIAL.flush();
+  delay(1000);
+
   MUX_SERIAL.write(ch2o_read_cmd, sizeof(ch2o_read_cmd));
   delay(1000);
   if (MUX_SERIAL.write(ch2o_return_cmd, sizeof(ch2o_return_cmd)) == 9)
@@ -221,6 +224,9 @@ void read_ps_PM(int *res1, int *res2, int *res3)
 {
 read_again:
 {
+  MUX_SERIAL.flush();
+  delay(1000);
+
   if (MUX_SERIAL.write(ps_read_cmd, sizeof(ps_read_cmd)) == 9)
   {
     for (byte i = 0; i < 9; i++)
@@ -251,8 +257,9 @@ read_again:
   }
 }
   delay(1000);
-  while (ps_received_byte[8] == 255)
+  while (ps_received_byte[8] == 255 || ps_received_byte[1] == 255)
   {
+    clear_serial();
     goto read_again;
   }
 }
@@ -261,6 +268,9 @@ void read_co2(int *CO2)
 {
 read_again:
 {
+  MUX_SERIAL.flush();
+  delay(1000);
+
   if (MUX_SERIAL.write(co2_start_cmd, sizeof(co2_start_cmd)) == 9)
   {
 
@@ -295,29 +305,32 @@ read_again:
 
 void clear_serial()
 {
-  MUX_SERIAL.end();
-  delay(250);
-  MUX_SERIAL.begin(SENSOR_BAUDRATE);
+  // MUX_SERIAL.end();
+  // delay(250);
+  // MUX_SERIAL.begin(SENSOR_BAUDRATE);
 
   // clearing serial buffers
-  // while (MUX_SERIAL.available() > 0)
-  // {
-  //   for (int i = 0; i < 5; i++)
-  //   {
-  //     for (int j = 0; j < 5; j++)
-  //     {
-  //       char t = Serial.read();
-  //       delay(1);
-  //     }
-  //     delay(10);
-  //   }
-  //   break;
-  // }
+  while (MUX_SERIAL.available() > 0)
+  {
+    for (int i = 0; i < 5; i++)
+    {
+      for (int j = 0; j < 5; j++)
+      {
+        char t = Serial.read();
+        delay(1);
+      }
+      delay(10);
+    }
+    break;
+  }
   delay(250);
 }
 
 void read_co(float *CO)
 {
+  MUX_SERIAL.flush();
+  delay(1000);
+  
   writeCommand(getppm, buf);
 
   for (int i = 0; i < 8; i++)

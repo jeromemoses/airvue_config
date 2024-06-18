@@ -1,5 +1,10 @@
 # ChangeLog for Airvue_config LIB
 
+## [1.1.5] - 2024-6-18
+### Serial.flush() fix with co sensor
+#### ->removed unwanted serial flushes
+#### ->removed MUX_SERIAL.end() on clear_serial() and fixes sensor value errors 
+
 ## [1.1.4] - 2024-6-18
 ### Fixed serial terminating issue with PM sensor
 #### Replaced MUX_SERIAL.flush() instead of serial.end()

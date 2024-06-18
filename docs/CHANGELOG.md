@@ -1,5 +1,9 @@
 # ChangeLog for Airvue_config LIB
 
+## [1.1.4] - 2024-6-18
+### Fixed serial terminating issue with PM sensor
+#### Replaced MUX_SERIAL.flush() instead of serial.end()
+
 ## [1.1.3] - 2024-6-12
 ### fixed But led to turns-ON on sys_startup() itself
 

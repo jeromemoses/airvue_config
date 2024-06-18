@@ -188,6 +188,9 @@ void read_ch2o(float *CH2O)
 {
 read_again:
 {
+  MUX_SERIAL.flush();
+  delay(1000);
+
   MUX_SERIAL.write(ch2o_read_cmd, sizeof(ch2o_read_cmd));
   delay(1000);
   if (MUX_SERIAL.write(ch2o_return_cmd, sizeof(ch2o_return_cmd)) == 9)
@@ -221,6 +224,9 @@ void read_ps_PM(int *res1, int *res2, int *res3)
 {
 read_again:
 {
+  MUX_SERIAL.flush();
+  delay(1000);
+
   if (MUX_SERIAL.write(ps_read_cmd, sizeof(ps_read_cmd)) == 9)
   {
     for (byte i = 0; i < 9; i++)
@@ -261,6 +267,9 @@ void read_co2(int *CO2)
 {
 read_again:
 {
+  MUX_SERIAL.flush();
+  delay(1000);
+
   if (MUX_SERIAL.write(co2_start_cmd, sizeof(co2_start_cmd)) == 9)
   {
 
@@ -318,6 +327,9 @@ void clear_serial()
 
 void read_co(float *CO)
 {
+  MUX_SERIAL.flush();
+  delay(1000);
+  
   writeCommand(getppm, buf);
 
   for (int i = 0; i < 8; i++)

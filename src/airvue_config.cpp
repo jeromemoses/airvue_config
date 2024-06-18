@@ -166,7 +166,6 @@ void MULTIPLEX_SWITCH(int s0, int s1, int s2, int s3)
 void writeCommand(uint8_t cmd[], uint8_t *response)
 {
   MUX_SERIAL.write(cmd, REQUEST_CNT);
-  MUX_SERIAL.flush();
 
   if (response != NULL)
   {
@@ -304,24 +303,24 @@ read_again:
 
 void clear_serial()
 {
-  MUX_SERIAL.end();
-  delay(250);
-  MUX_SERIAL.begin(SENSOR_BAUDRATE);
+  // MUX_SERIAL.end();
+  // delay(250);
+  // MUX_SERIAL.begin(SENSOR_BAUDRATE);
 
   // clearing serial buffers
-  // while (MUX_SERIAL.available() > 0)
-  // {
-  //   for (int i = 0; i < 5; i++)
-  //   {
-  //     for (int j = 0; j < 5; j++)
-  //     {
-  //       char t = Serial.read();
-  //       delay(1);
-  //     }
-  //     delay(10);
-  //   }
-  //   break;
-  // }
+  while (MUX_SERIAL.available() > 0)
+  {
+    for (int i = 0; i < 5; i++)
+    {
+      for (int j = 0; j < 5; j++)
+      {
+        char t = Serial.read();
+        delay(1);
+      }
+      delay(10);
+    }
+    break;
+  }
   delay(250);
 }
 

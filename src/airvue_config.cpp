@@ -77,6 +77,8 @@ void sys_startup()
 
   // digital power switch pin declaration
   pinMode(PWR_SWITCH, OUTPUT);
+  Power_switch(1);
+  delay(500);
 
   // MUTIPLEXER TRUETH TABLE PINS DECLARATION
   pinMode(MUX_SS0, OUTPUT);
@@ -187,11 +189,24 @@ void read_ch2o(float *CH2O)
 {
 read_again:
 {
-  MUX_SERIAL.flush();
-  delay(1000);
+  // clearing serial buffers
+  while (MUX_SERIAL.available() > 0)
+  {
+    for (int i = 0; i < 5; i++)
+    {
+      for (int j = 0; j < 5; j++)
+      {
+        char t = Serial.read();
+        delay(1);
+      }
+      delay(10);
+    }
+    break;
+  }
+  delay(500);
 
   MUX_SERIAL.write(ch2o_read_cmd, sizeof(ch2o_read_cmd));
-  delay(1000);
+  delay(500);
   if (MUX_SERIAL.write(ch2o_return_cmd, sizeof(ch2o_return_cmd)) == 9)
   {
     for (byte i = 0; i < 9; i++)
@@ -208,9 +223,17 @@ read_again:
     // }
     // Serial.println(">");
 
+    // Serial.print("ch2o RC_HEX <\t");
+    // for (int j = 0; j < 9; j++)
+    // {
+    //   Serial.print(ch2o_received_bytes[j], HEX);
+    //   Serial.print("\t");
+    // }
+    // Serial.println(">");
+
     // Gas concentration value=High byte of concentration *256+ Low byte of concentration
-    *CH2O = (ch2o_received_bytes[2] * 256) + ch2o_received_bytes[3];
-  }
+    *CH2O = (ch2o_received_bytes[6] * 256) + ch2o_received_bytes[7];
+    }
 }
   delay(1000);
   while (ch2o_received_bytes[8] == 255)
@@ -253,6 +276,12 @@ read_again:
     // pm10
     *res3 = (0x00 * 256) + ps_received_byte[5];
     //*res3 = *res3/1000;  //converts ug/m3 to ppm
+    if(*res1 == 0 && *res2 >240 && *res3 == 0)
+    {
+      *res1 = 0;
+      *res2 = 0;
+      *res3 = 0;
+    }
   }
 }
   delay(1000);
@@ -303,32 +332,17 @@ read_again:
 
 void clear_serial()
 {
-  // MUX_SERIAL.end();
-  // delay(250);
-  // MUX_SERIAL.begin(SENSOR_BAUDRATE);
-
-  // clearing serial buffers
-  while (MUX_SERIAL.available() > 0)
-  {
-    for (int i = 0; i < 5; i++)
-    {
-      for (int j = 0; j < 5; j++)
-      {
-        char t = Serial.read();
-        delay(1);
-      }
-      delay(10);
-    }
-    break;
-  }
+  MUX_SERIAL.end();
   delay(250);
+  MUX_SERIAL.begin(SENSOR_BAUDRATE);
+  delay(750);
 }
 
 void read_co(float *CO)
 {
   MUX_SERIAL.flush();
   delay(1000);
-  
+
   writeCommand(getppm, buf);
 
   for (int i = 0; i < 8; i++)
@@ -350,7 +364,7 @@ void read_co(float *CO)
     measurement = -1;
   }
   *CO = measurement;
-  if (*CO > 500)
+  if (*CO > 500 || *CO < 0)
   {
     *CO = 0;
   }
@@ -522,15 +536,17 @@ void read_VEML7700(int LUX_CHANNEL, float *result)
   }
 
   uint16_t irq = veml.interruptStatus();
-  if (irq & VEML7700_INTERRUPT_LOW) {
-    //Serial.println("** Low threshold");
+  if (irq & VEML7700_INTERRUPT_LOW)
+  {
+    // Serial.println("** Low threshold");
   }
-  if (irq & VEML7700_INTERRUPT_HIGH) {
-    //Serial.println("** High threshold");
+  if (irq & VEML7700_INTERRUPT_HIGH)
+  {
+    // Serial.println("** High threshold");
   }
 }
 
-void goToPowerOff() 
+void goToPowerOff()
 {
   Serial.println("Sleep triggered : )");
   esp_deep_sleep_start();

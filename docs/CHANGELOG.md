@@ -1,5 +1,12 @@
 # ChangeLog for Airvue_config LIB
 
+## [1.1.6] - 2024-6-18
+### Serial>error fixes with Multiplexed uart pin
+#### ->solved ch2o expection values
+#### ->added ch2o default return commands
+#### ->Automated power switching to be called inside sys_startup() instead on void setup(); --> Power_switch(1);
+#### ->Changed read method of ch2o sensor
+
 ## [1.1.5] - 2024-6-18
 ### Serial.flush() fix with co sensor
 #### ->removed unwanted serial flushes

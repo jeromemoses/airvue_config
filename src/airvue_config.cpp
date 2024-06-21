@@ -10,8 +10,6 @@
 #include <Arduino_HS300x.h>
 #include <Adafruit_VEML7700.h>
 #include <ArduinoJson.h>
-JsonDocument doc;
-String json;
 
 Adafruit_VEML7700 veml = Adafruit_VEML7700();
 
@@ -571,32 +569,27 @@ void goToPowerOff()
 
 void get_stm_data(float* eto, float* h2s, float* nh3, float* no2, float* o2, float* so2)
 {
-  STM_serial.flush();
-  STM_serial.println("1");
-  delay(250);
-  while (STM_serial.available() > 0)
+  STM_serial.print(1);
+  String json;
+  json = STM_serial.readStringUntil('\n');
+  json.trim();
+  //Serial.printf("\n\n %s \n\n", json.c_str());
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, json);
+
+  if (error)
   {
-    // Serial.print("\nGot the JSON pool\n");
-    // Serial.println(STM_serial.readString());
-    json = STM_serial.readString();
-    json.trim();
-    //Serial.printf("\n\n %s \n\n", json.c_str());
-    String temp = json.c_str();
-    DeserializationError error = deserializeJson(doc, json);
-
-    if (error)
-    {
-      Serial.print(F("deserializeJson() failed: "));
-      Serial.println(error.f_str()); // failed heer
-      return;
-    }
-
-    *eto = doc["ETO"];
-    *h2s = doc["HS2"];
-    *nh3 = doc["NH3"];
-    *no2 = doc["NO2"];
-    *o2 = doc["O2"];
-    *so2 = doc["SO2"];
-    // Serial.printf("Extracted data: \nETO :%f\nH2S :%f\nNH3 :%f\nNO2 :%f\nO2 :%f\nSO2 :%f\n", *eto, *h2s, *nh3, *no2, *o2, *so2);
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.f_str()); // failed heer
+    return;
   }
+
+  *eto = doc["ETO"];
+  *h2s = doc["HS2"];
+  *nh3 = doc["NH3"];
+  *no2 = doc["NO2"];
+  *o2 = doc["O2"];
+  *so2 = doc["SO2"];
+  // Serial.printf("Extracted data: \nETO :%f\nH2S :%f\nNH3 :%f\nNO2 :%f\nO2 :%f\nSO2 :%f\n", *eto, *h2s, *nh3, *no2, *o2, *so2);
+  json.clear();
 }

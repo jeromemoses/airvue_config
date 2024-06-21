@@ -9,6 +9,9 @@
 #include <Adafruit_BME280.h>
 #include <Arduino_HS300x.h>
 #include <Adafruit_VEML7700.h>
+#include <ArduinoJson.h>
+JsonDocument doc;
+String json;
 
 Adafruit_VEML7700 veml = Adafruit_VEML7700();
 
@@ -19,6 +22,7 @@ Adafruit_BME280 bme; // I2C
 unsigned long delayTime;
 
 #ifdef SENSOR_SERIAL_ENABLE
+SoftwareSerial STM_serial(26, 32);
 SoftwareSerial MUX_SERIAL(MUX_TX, MUX_RX); // multiplexer serial port
 #endif
 
@@ -62,6 +66,7 @@ void sys_startup()
 {
   // Debugging serial initialization
   Serial.begin(115200);
+  STM_serial.begin(115200);
 
 #ifdef SENSOR_SERIAL_ENABLE
   // Multiplexer Serial initialization
@@ -364,9 +369,14 @@ void read_co(float *CO)
     measurement = -1;
   }
   *CO = measurement;
-  if (*CO > 500 || *CO < 0)
+  if (*CO > 500)
   {
     *CO = 0;
+  }
+
+  if(*CO < 0)
+  {
+    *CO = 0.5;
   }
 }
 #endif
@@ -381,16 +391,16 @@ void start_BME()
   if (!status)
   {
     Serial.println("Could not find a valid BME280 sensor, check wiring, address, sensor ID!");
-    Serial.print("SensorID was: 0x");
-    Serial.println(bme.sensorID(), 16);
-    Serial.print("        ID of 0xFF probably means a bad address, a BMP 180 or BMP 085\n");
-    Serial.print("   ID of 0x56-0x58 represents a BMP 280,\n");
-    Serial.print("        ID of 0x60 represents a BME 280.\n");
-    Serial.print("        ID of 0x61 represents a BME 680.\n");
+    // Serial.print("SensorID was: 0x");
+    // Serial.println(bme.sensorID(), 16);
+    // Serial.print("        ID of 0xFF probably means a bad address, a BMP 180 or BMP 085\n");
+    // Serial.print("   ID of 0x56-0x58 represents a BMP 280,\n");
+    // Serial.print("        ID of 0x60 represents a BME 280.\n");
+    // Serial.print("        ID of 0x61 represents a BME 680.\n");
     while (1)
       delay(10);
   }
-  Serial.println("-- Default Test --");
+  //Serial.println("-- Default Test --");
 }
 
 void read_bme(int bme_channel, float *result)
@@ -453,13 +463,20 @@ void read_hs3003(int HS_CAHNNEL, float *result)
 
 void start_VEML7700()
 {
-  Serial.println("Adafruit VEML7700 Test");
+  //Serial.println("Adafruit VEML7700 Test");
 
   if (!veml.begin())
   {
-    Serial.println("Sensor not found");
+    Serial.println("Sensor not VEML7700");
     while (1)
-      ;
+    {
+      Serial.println("Retrying to connect with VEML7700");
+      if(veml.begin())
+      {
+        break;
+      }
+    }
+    
   }
   Serial.println("Sensor found");
 
@@ -470,43 +487,43 @@ void start_VEML7700()
   // veml.setGain(VEML7700_GAIN_1_8);
   // veml.setIntegrationTime(VEML7700_IT_100MS);
 
-  Serial.print(F("Gain: "));
+  //Serial.print(F("Gain: "));
   switch (veml.getGain())
   {
   case VEML7700_GAIN_1:
-    Serial.println("1");
+    //Serial.println("1");
     break;
   case VEML7700_GAIN_2:
-    Serial.println("2");
+    //Serial.println("2");
     break;
   case VEML7700_GAIN_1_4:
-    Serial.println("1/4");
+    //Serial.println("1/4");
     break;
   case VEML7700_GAIN_1_8:
-    Serial.println("1/8");
+    //Serial.println("1/8");
     break;
   }
 
-  Serial.print(F("Integration Time (ms): "));
+  //Serial.print(F("Integration Time (ms): "));
   switch (veml.getIntegrationTime())
   {
   case VEML7700_IT_25MS:
-    Serial.println("25");
+    //Serial.println("25");
     break;
   case VEML7700_IT_50MS:
-    Serial.println("50");
+    //Serial.println("50");
     break;
   case VEML7700_IT_100MS:
-    Serial.println("100");
+    //Serial.println("100");
     break;
   case VEML7700_IT_200MS:
-    Serial.println("200");
+    //Serial.println("200");
     break;
   case VEML7700_IT_400MS:
-    Serial.println("400");
+    //Serial.println("400");
     break;
   case VEML7700_IT_800MS:
-    Serial.println("800");
+    //Serial.println("800");
     break;
   }
 
@@ -548,6 +565,38 @@ void read_VEML7700(int LUX_CHANNEL, float *result)
 
 void goToPowerOff()
 {
-  Serial.println("Sleep triggered : )");
+  //Serial.println("Sleep triggered : )");
   esp_deep_sleep_start();
+}
+
+void get_stm_data(float* eto, float* h2s, float* nh3, float* no2, float* o2, float* so2)
+{
+  STM_serial.flush();
+  STM_serial.println("1");
+  delay(250);
+  while (STM_serial.available() > 0)
+  {
+    // Serial.print("\nGot the JSON pool\n");
+    // Serial.println(STM_serial.readString());
+    json = STM_serial.readString();
+    json.trim();
+    //Serial.printf("\n\n %s \n\n", json.c_str());
+    String temp = json.c_str();
+    DeserializationError error = deserializeJson(doc, json);
+
+    if (error)
+    {
+      Serial.print(F("deserializeJson() failed: "));
+      Serial.println(error.f_str()); // failed heer
+      return;
+    }
+
+    *eto = doc["ETO"];
+    *h2s = doc["HS2"];
+    *nh3 = doc["NH3"];
+    *no2 = doc["NO2"];
+    *o2 = doc["O2"];
+    *so2 = doc["SO2"];
+    // Serial.printf("Extracted data: \nETO :%f\nH2S :%f\nNH3 :%f\nNO2 :%f\nO2 :%f\nSO2 :%f\n", *eto, *h2s, *nh3, *no2, *o2, *so2);
+  }
 }

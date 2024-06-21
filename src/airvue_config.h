@@ -68,3 +68,6 @@ const byte ch2o_default_return[] = {0XFF, 0X17, 0x04, 0x00, 0x00, 0x25, 0x13, 0x
 
 //sleep mode function
 void goToPowerOff();
+
+//Fetch data from SUB MCU->STM32 
+void get_stm_data(float*, float*, float*, float*, float*, float*);

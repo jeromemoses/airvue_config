@@ -279,9 +279,17 @@ read_again:
     // pm10
     *res3 = (0x00 * 256) + ps_received_byte[5];
     //*res3 = *res3/1000;  //converts ug/m3 to ppm
+    
     if(*res1 == 0 && *res2 >240 && *res3 == 0)
     {
       *res1 = 0;
+      *res2 = 0;
+      *res3 = 0;
+    }
+
+    if(*res1 == 255 && *res2 == 255 && *res3 == 255)
+    {
+      *res1 = 0;      
       *res2 = 0;
       *res3 = 0;
     }

@@ -484,7 +484,7 @@ void start_VEML7700()
     }
     
   }
-  Serial.println("Sensor found");
+  // Serial.println("Sensor found");
 
   // == OPTIONAL =====
   // Can set non-default gain and integration time to

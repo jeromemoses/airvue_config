@@ -37,45 +37,48 @@ void setup()
 void loop()
 {
   switch_sensor(PM_PORT);
-  delay(2000);
-  clear_serial();
-  read_ps_PM(&pm1_0, &pm2_5, &pm10);
-  Serial.printf("pm1\t :\t%d\npm25\t :\t%d\npm10\t :\t%d \n", pm1_0, pm2_5, pm10);
+    delay(2000);
+    clear_serial();
+    read_ps_PM(&pm1_0, &pm2_5, &pm10);
 
-  switch_sensor(CH2O_PORT);
-  delay(2000);
-  clear_serial();
-  read_ch2o(&ch2o);
-  Serial.printf("ch2o\t :\t%.0f\n",ch2o);
+    switch_sensor(CH2O_PORT);
+    delay(2000);
+    clear_serial();
+    read_ch2o(&ch2o);
+    
+    // co sensor code
+    switch_sensor(CO_PORT);
+    delay(2000);
+    clear_serial();
+    read_co(&co);
 
-  //co sensor code
-  switch_sensor(CO_PORT);
-  delay(2000);
-  clear_serial();
-  read_co(&co);
-  Serial.printf("CO\t :\t%.3f \n",co);
+    switch_sensor(CO2_PORT);
+    delay(2000);
+    clear_serial();
+    read_co2(&co2);
 
-  switch_sensor(CO2_PORT);
-  delay(2000);
-  clear_serial();
-  read_co2(&co2);
-  Serial.printf("co2\t :\t%d\n",co2);
+    read_hs3003(HS_TEMP, &temp);
+    read_hs3003(HS_HUMID, &humidity);
 
-  read_hs3003(HS_TEMP,&temp);
-  read_hs3003(HS_HUMID,&humidity);
-  Serial.printf("temp\t :\t%.2f \nhumid\t :\t%.2f\n",temp, humidity);
+    read_bme(PRESSURE, &pressure);
+    read_bme(ALTITUDE, &altitude);
+    read_bme(TEMPERATURE, &bme_temp);
+    read_bme(HUMIDITY, &bme_humid);
 
-  read_bme(PRESSURE, &pressure);
-  read_bme(ALTITUDE, &altitude);
-  read_bme(TEMPERATURE, &bme_temp);
-  read_bme(HUMIDITY, &bme_humid);
+    read_VEML7700(VEML_ALS, &als);
+    read_VEML7700(VEML_WHITE, &white);
+    read_VEML7700(VEML_LUX, &lux);
 
-  Serial.printf("Pressure :\t%f \nAltitude :\t%f \nBME_temp :\t%.3f \nBME_humid:\t%.3f\n", pressure, altitude, bme_temp, bme_humid);
+    get_stm_data(&ETO, &H2S, &NH3, &NO2, &O2, &SO2);
 
-  read_VEML7700(VEML_ALS, &als);
-  read_VEML7700(VEML_WHITE, &white);
-  read_VEML7700(VEML_LUX, &lux);
-  Serial.printf("ALS:\t :\t%.3f\n",als);
-  Serial.printf("White:\t :\t%.3f\n",white);
-  Serial.printf("Lux:\t :\t%.3f\n------------------------------\n",lux);
+    Serial.printf("ETO\t :\t%f \nH2S\t :\t%f \nNH3\t :\t%f \nNO2\t :\t%f \nO2\t :\t%f \nSO2\t :\t%f \n", ETO, H2S, NH3, NO2, O2, SO2);
+    Serial.printf("pm1\t :\t%d\npm25\t :\t%d\npm10\t :\t%d \n", pm1_0, pm2_5, pm10);
+    Serial.printf("AQI\t :\t%d \n", AQI);
+    Serial.printf("ch2o\t :\t%.0f\n", ch2o);
+    Serial.printf("CO\t :\t%.3f \n", co);
+    Serial.printf("co2\t :\t%d\n", co2);
+    Serial.printf("temp\t :\t%.2f \nhumid\t :\t%.2f\n", temp, humidity);
+    Serial.printf("ALS:\t :\t%.3f\n", als);
+    Serial.printf("White:\t :\t%.3f\n", white);
+    Serial.printf("Lux:\t :\t%.3f\n------------------------------\n", lux);
 }

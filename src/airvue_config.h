@@ -9,6 +9,30 @@
 #define SENSOR_BAUDRATE 9600 //sensors baud rate
 #define BUT_PIN 33
 
+//MODBUS read holding registers
+#define REGN_co2 0
+#define REGN_ch2o 1
+#define REGN_temp 2
+#define REGN_humid 3
+#define REGN_pm1 4
+#define REGN_pm2_5 5
+#define REGN_pm10 6
+#define REGN_co 7
+#define REGN_aqi 8
+#define REGN_lux 9
+#define REGN_pressure 10
+#define REGN_altitude 11
+#define REGN_ETO 12
+#define REGN_H2S 13
+#define REGN_NH3 14
+#define REGN_NO2 15
+#define REGN_O2 16
+#define REGN_SO2 17
+#define REGN_TVOC 18
+
+//MODBUS Slave ID
+#define SLAVE_ID 77
+
 #define SENSOR_SERIAL_ENABLE //define SENSOR_SERIAL_ENABLE when using sensor on UART on multiplexer
 //#undef SENSOR_SERIAL_ENABLE  //command this when using sensor UART on multiplexer
 
@@ -70,3 +94,32 @@ void goToPowerOff();
 
 //Fetch data from SUB MCU->STM32 
 void get_stm_data(float*, float*, float*, float*, float*, float*);
+
+//initialize the modbus uart 
+void MODBUS_init();
+
+//Initiates the modbus data transmission
+void MODBUS_push(struct modbus_parameter);
+
+struct modbus_parameter
+{
+    int co2; // Buffer for CO2
+    float ch2o;
+    float temp;
+    float humidity;
+    int pm1;
+    int pm2_5;
+    int pm10;
+    float co;
+    int AQI;
+    float lux;
+    float pressure;
+    float altitude;
+    float ETO;
+    float H2S;
+    float NH3;
+    float NO2;
+    float O2;
+    float SO2;
+    float TVOC;
+};

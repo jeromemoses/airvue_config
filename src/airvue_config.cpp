@@ -10,6 +10,10 @@
 #include <Arduino_HS300x.h>
 #include <Adafruit_VEML7700.h>
 #include <ArduinoJson.h>
+#include <HardwareSerial.h>
+#include <ModbusRTU.h>
+
+ModbusRTU mb;
 
 Adafruit_VEML7700 veml = Adafruit_VEML7700();
 
@@ -21,7 +25,7 @@ unsigned long delayTime;
 
 #ifdef SENSOR_SERIAL_ENABLE
 SoftwareSerial STM_serial(26, 32);
-SoftwareSerial MUX_SERIAL(MUX_TX, MUX_RX); // multiplexer serial port
+HardwareSerial MUX_SERIAL(2); // multiplexer serial port
 #endif
 
 byte ch2o_received_bytes[9];
@@ -63,12 +67,12 @@ int BUT_LED(bool is_on)
 void sys_startup()
 {
   // Debugging serial initialization
-  Serial.begin(115200);
+  Serial.begin(9600,SERIAL_8N1);
   STM_serial.begin(115200);
 
 #ifdef SENSOR_SERIAL_ENABLE
   // Multiplexer Serial initialization
-  MUX_SERIAL.begin(SENSOR_BAUDRATE);
+  MUX_SERIAL.begin(SENSOR_BAUDRATE, SERIAL_8N1, MUX_TX, MUX_RX);
 #endif
 
   // power button LED pin declaration
@@ -600,4 +604,54 @@ void get_stm_data(float* eto, float* h2s, float* nh3, float* no2, float* o2, flo
   *so2 = doc["SO2"];
   // Serial.printf("Extracted data: \nETO :%f\nH2S :%f\nNH3 :%f\nNO2 :%f\nO2 :%f\nSO2 :%f\n", *eto, *h2s, *nh3, *no2, *o2, *so2);
   json.clear();
+}
+
+void MODBUS_init()
+{
+  mb.begin(&Serial);
+  mb.slave(SLAVE_ID);
+
+  mb.addHreg(REGN_co2);
+  mb.addHreg(REGN_ch2o);
+  mb.addHreg(REGN_temp);
+  mb.addHreg(REGN_humid);
+  mb.addHreg(REGN_pm1);
+  mb.addHreg(REGN_pm2_5);
+  mb.addHreg(REGN_pm10);
+  mb.addHreg(REGN_co);
+  mb.addHreg(REGN_aqi);
+  mb.addHreg(REGN_lux);
+  mb.addHreg(REGN_pressure);
+  mb.addHreg(REGN_altitude);
+  mb.addHreg(REGN_ETO);
+  mb.addHreg(REGN_H2S);
+  mb.addHreg(REGN_NH3);
+  mb.addHreg(REGN_NO2);
+  mb.addHreg(REGN_O2);
+  mb.addHreg(REGN_SO2);
+  mb.addHreg(REGN_TVOC);
+}
+
+void MODBUS_push(struct modbus_parameter MD_data)
+{
+mb.Hreg(REGN_co2, MD_data.co2);
+mb.Hreg(REGN_ch2o, MD_data.ch2o);
+mb.Hreg(REGN_temp, MD_data.temp);
+mb.Hreg(REGN_humid, MD_data.humidity);
+mb.Hreg(REGN_pm1, MD_data.pm1);
+mb.Hreg(REGN_pm2_5, MD_data.pm2_5);
+mb.Hreg(REGN_pm10, MD_data.pm10);
+mb.Hreg(REGN_co, MD_data.co);
+mb.Hreg(REGN_aqi, MD_data.AQI);
+mb.Hreg(REGN_lux, MD_data.lux);
+mb.Hreg(REGN_pressure, MD_data.pressure);
+mb.Hreg(REGN_altitude, MD_data.altitude);
+mb.Hreg(REGN_ETO, MD_data.ETO);
+mb.Hreg(REGN_H2S, MD_data.H2S);
+mb.Hreg(REGN_NH3, MD_data.NH3);
+mb.Hreg(REGN_NO2, MD_data.NO2);
+mb.Hreg(REGN_O2, MD_data.O2);
+mb.Hreg(REGN_SO2, MD_data.SO2);
+mb.Hreg(REGN_TVOC, MD_data.TVOC);
+mb.task();
 }

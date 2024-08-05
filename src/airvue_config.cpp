@@ -12,6 +12,9 @@
 #include <ArduinoJson.h>
 #include <HardwareSerial.h>
 #include <ModbusRTU.h>
+#include <ToneESP32.h>
+
+ToneESP32 buzzer(BUZZER_PIN, BUZZER_CHANNEL);
 
 ModbusRTU mb;
 
@@ -35,6 +38,9 @@ uint8_t getppm[REQUEST_CNT] = {0xff, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0
 float measurement = 0;
 byte buf[RESPONSE_CNT - 1];
 byte cheksum = 0;
+
+int PUSH_BUT_timer = 0;
+bool sleep_permission = 0;
 
 int Power_switch(bool is_on)
 {
@@ -67,7 +73,7 @@ int BUT_LED(bool is_on)
 void sys_startup()
 {
   // Debugging serial initialization
-  Serial.begin(9600,SERIAL_8N1);
+  Serial.begin(9600, SERIAL_8N1);
   STM_serial.begin(115200);
 
 #ifdef SENSOR_SERIAL_ENABLE
@@ -79,7 +85,7 @@ void sys_startup()
   pinMode(BUT_LED_PIN, OUTPUT);
   BUT_LED(1);
 
-  //input button pin initialization
+  // input button pin initialization
   pinMode(BUT_PIN, INPUT);
 
   // digital power switch pin declaration
@@ -92,6 +98,8 @@ void sys_startup()
   pinMode(MUX_SS1, OUTPUT);
   pinMode(MUX_SS2, OUTPUT);
   pinMode(MUX_SS3, OUTPUT);
+
+  esp_sleep_enable_ext1_wakeup(BUTTON_PIN_BITMASK, ESP_EXT1_WAKEUP_ANY_HIGH);
 
 #ifdef SENSOR_SERIAL_ENABLE
   switch_sensor(PM_PORT);
@@ -240,7 +248,7 @@ read_again:
 
     // Gas concentration value=High byte of concentration *256+ Low byte of concentration
     *CH2O = (ch2o_received_bytes[6] * 256) + ch2o_received_bytes[7];
-    }
+  }
 }
   delay(1000);
   while (ch2o_received_bytes[8] == 255)
@@ -283,17 +291,17 @@ read_again:
     // pm10
     *res3 = (0x00 * 256) + ps_received_byte[5];
     //*res3 = *res3/1000;  //converts ug/m3 to ppm
-    
-    if(*res1 == 0 && *res2 >240 && *res3 == 0)
+
+    if (*res1 == 0 && *res2 > 240 && *res3 == 0)
     {
       *res1 = 0;
       *res2 = 0;
       *res3 = 0;
     }
 
-    if(*res1 == 255 && *res2 == 255 && *res3 == 255)
+    if (*res1 == 255 && *res2 == 255 && *res3 == 255)
     {
-      *res1 = 0;      
+      *res1 = 0;
       *res2 = 0;
       *res3 = 0;
     }
@@ -384,7 +392,7 @@ void read_co(float *CO)
     *CO = 0;
   }
 
-  if(*CO < 0)
+  if (*CO < 0)
   {
     *CO = 0.5;
   }
@@ -410,7 +418,7 @@ void start_BME()
     while (1)
       delay(10);
   }
-  //Serial.println("-- Default Test --");
+  // Serial.println("-- Default Test --");
 }
 
 void read_bme(int bme_channel, float *result)
@@ -473,7 +481,7 @@ void read_hs3003(int HS_CAHNNEL, float *result)
 
 void start_VEML7700()
 {
-  //Serial.println("Adafruit VEML7700 Test");
+  // Serial.println("Adafruit VEML7700 Test");
 
   if (!veml.begin())
   {
@@ -481,12 +489,11 @@ void start_VEML7700()
     while (1)
     {
       Serial.println("Retrying to connect with VEML7700");
-      if(veml.begin())
+      if (veml.begin())
       {
         break;
       }
     }
-    
   }
   // Serial.println("Sensor found");
 
@@ -497,43 +504,43 @@ void start_VEML7700()
   // veml.setGain(VEML7700_GAIN_1_8);
   // veml.setIntegrationTime(VEML7700_IT_100MS);
 
-  //Serial.print(F("Gain: "));
+  // Serial.print(F("Gain: "));
   switch (veml.getGain())
   {
   case VEML7700_GAIN_1:
-    //Serial.println("1");
+    // Serial.println("1");
     break;
   case VEML7700_GAIN_2:
-    //Serial.println("2");
+    // Serial.println("2");
     break;
   case VEML7700_GAIN_1_4:
-    //Serial.println("1/4");
+    // Serial.println("1/4");
     break;
   case VEML7700_GAIN_1_8:
-    //Serial.println("1/8");
+    // Serial.println("1/8");
     break;
   }
 
-  //Serial.print(F("Integration Time (ms): "));
+  // Serial.print(F("Integration Time (ms): "));
   switch (veml.getIntegrationTime())
   {
   case VEML7700_IT_25MS:
-    //Serial.println("25");
+    // Serial.println("25");
     break;
   case VEML7700_IT_50MS:
-    //Serial.println("50");
+    // Serial.println("50");
     break;
   case VEML7700_IT_100MS:
-    //Serial.println("100");
+    // Serial.println("100");
     break;
   case VEML7700_IT_200MS:
-    //Serial.println("200");
+    // Serial.println("200");
     break;
   case VEML7700_IT_400MS:
-    //Serial.println("400");
+    // Serial.println("400");
     break;
   case VEML7700_IT_800MS:
-    //Serial.println("800");
+    // Serial.println("800");
     break;
   }
 
@@ -575,17 +582,41 @@ void read_VEML7700(int LUX_CHANNEL, float *result)
 
 void goToPowerOff()
 {
-  //Serial.println("Sleep triggered : )");
+  // Serial.println("Sleep triggered : )");
   esp_deep_sleep_start();
 }
 
-void get_stm_data(float* eto, float* h2s, float* nh3, float* no2, float* o2, float* so2)
+void button_sleep_handle()
+{
+  while (digitalRead(BUT_PIN))
+  {
+    PUSH_BUT_timer++;
+    delay(500);
+    if (PUSH_BUT_timer >= 4)
+    {
+      sleep_permission = 1;
+      BUT_LED(0);
+      break;
+    }
+  }
+  PUSH_BUT_timer = 0;
+
+  if (sleep_permission)
+  {
+    Power_switch(0);
+    delay(1000);
+    // Trigger System OFF after 5 interrupts
+    goToPowerOff();
+  }
+}
+
+void get_stm_data(float *eto, float *h2s, float *nh3, float *no2, float *o2, float *so2)
 {
   STM_serial.print(1);
   String json;
   json = STM_serial.readStringUntil('\n');
   json.trim();
-  //Serial.printf("\n\n %s \n\n", json.c_str());
+  // Serial.printf("\n\n %s \n\n", json.c_str());
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, json);
 
@@ -634,24 +665,49 @@ void MODBUS_init()
 
 void MODBUS_push(struct modbus_parameter MD_data)
 {
-mb.Hreg(REGN_co2, MD_data.co2);
-mb.Hreg(REGN_ch2o, MD_data.ch2o);
-mb.Hreg(REGN_temp, MD_data.temp);
-mb.Hreg(REGN_humid, MD_data.humidity);
-mb.Hreg(REGN_pm1, MD_data.pm1);
-mb.Hreg(REGN_pm2_5, MD_data.pm2_5);
-mb.Hreg(REGN_pm10, MD_data.pm10);
-mb.Hreg(REGN_co, MD_data.co);
-mb.Hreg(REGN_aqi, MD_data.AQI);
-mb.Hreg(REGN_lux, MD_data.lux);
-mb.Hreg(REGN_pressure, MD_data.pressure);
-mb.Hreg(REGN_altitude, MD_data.altitude);
-mb.Hreg(REGN_ETO, MD_data.ETO);
-mb.Hreg(REGN_H2S, MD_data.H2S);
-mb.Hreg(REGN_NH3, MD_data.NH3);
-mb.Hreg(REGN_NO2, MD_data.NO2);
-mb.Hreg(REGN_O2, MD_data.O2);
-mb.Hreg(REGN_SO2, MD_data.SO2);
-mb.Hreg(REGN_TVOC, MD_data.TVOC);
-mb.task();
+  mb.Hreg(REGN_co2, MD_data.CO2);
+  mb.Hreg(REGN_ch2o, MD_data.CH2O);
+  mb.Hreg(REGN_temp, MD_data.TEMPERATURE);
+  mb.Hreg(REGN_humid, MD_data.HUMIDITY);
+  mb.Hreg(REGN_pm1, MD_data.PM1);
+  mb.Hreg(REGN_pm2_5, MD_data.PM2_5);
+  mb.Hreg(REGN_pm10, MD_data.PM10);
+  mb.Hreg(REGN_co, MD_data.CO);
+  mb.Hreg(REGN_aqi, MD_data.AQI);
+  mb.Hreg(REGN_lux, MD_data.LUX);
+  mb.Hreg(REGN_pressure, MD_data.PRESSURE);
+  mb.Hreg(REGN_altitude, MD_data.ALTITUDE);
+  mb.Hreg(REGN_ETO, MD_data.ETO);
+  mb.Hreg(REGN_H2S, MD_data.H2S);
+  mb.Hreg(REGN_NH3, MD_data.NH3);
+  mb.Hreg(REGN_NO2, MD_data.NO2);
+  mb.Hreg(REGN_O2, MD_data.O2);
+  mb.Hreg(REGN_SO2, MD_data.SO2);
+  mb.Hreg(REGN_TVOC, MD_data.TVOC);
+  mb.task();
+}
+
+void NOTIFY_BUZER(int data, int threshold)
+{
+  if (data > threshold)
+  {
+    buzzer.tone(NOTE_C4, 250);
+    buzzer.tone(NOTE_D4, 250);
+    buzzer.tone(NOTE_E4, 250);
+    buzzer.tone(NOTE_F4, 250);
+    buzzer.tone(NOTE_G4, 250);
+    buzzer.tone(NOTE_A4, 250);
+    buzzer.tone(NOTE_B4, 250);
+    buzzer.tone(NOTE_C5, 250);
+    delay(250);
+    buzzer.tone(NOTE_C5, 250);
+    buzzer.tone(NOTE_B4, 250);
+    buzzer.tone(NOTE_A4, 250);
+    buzzer.tone(NOTE_G4, 250);
+    buzzer.tone(NOTE_F4, 250);
+    buzzer.tone(NOTE_E4, 250);
+    buzzer.tone(NOTE_D4, 250);
+    buzzer.tone(NOTE_C4, 250);
+    buzzer.noTone();
+  }
 }

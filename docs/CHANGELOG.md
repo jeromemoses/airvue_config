@@ -1,5 +1,10 @@
 # ChangeLog for Airvue_config LIB
 
+## [1.2.7] - 2024-8-5
+#### -> Added MODBUS functionalities -> MODBUS_init(); , MODBUS_push();
+#### -> Added BUZER functionalities -> NOTIFY_BUZER(data, threshold);
+#### -> Added sleep mode functionality with push button -> button_sleep_handle();
+
 ## [1.1.7] - 2024-6-22
 #### ->Added stm32 data fetch functionality -> get_stm_data(...);
 #### ->Fixed json fetch issue on reading sub mcu ESP32 <- STM32

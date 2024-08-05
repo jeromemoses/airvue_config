@@ -8,6 +8,9 @@
 #define MUX_SS3 19
 #define SENSOR_BAUDRATE 9600 //sensors baud rate
 #define BUT_PIN 33
+#define BUTTON_PIN_BITMASK 0x200000000 // GPIOs 33
+#define BUZZER_PIN 4
+#define BUZZER_CHANNEL 0
 
 //MODBUS read holding registers
 #define REGN_co2 0
@@ -98,23 +101,20 @@ void get_stm_data(float*, float*, float*, float*, float*, float*);
 //initialize the modbus uart 
 void MODBUS_init();
 
-//Initiates the modbus data transmission
-void MODBUS_push(struct modbus_parameter);
-
 struct modbus_parameter
 {
-    int co2; // Buffer for CO2
-    float ch2o;
-    float temp;
-    float humidity;
-    int pm1;
-    int pm2_5;
-    int pm10;
-    float co;
+    int CO2; // Buffer for CO2
+    float CH2O;
+    float TEMPERATURE;
+    float HUMIDITY;
+    int PM1;
+    int PM2_5;
+    int PM10;
+    float CO;
     int AQI;
-    float lux;
-    float pressure;
-    float altitude;
+    float LUX;
+    float PRESSURE;
+    float ALTITUDE;
     float ETO;
     float H2S;
     float NH3;
@@ -123,3 +123,16 @@ struct modbus_parameter
     float SO2;
     float TVOC;
 };
+
+//Initiates the modbus data transmission
+void MODBUS_push(struct modbus_parameter);
+
+//Push button to trigger sleep have to use this on a separate RTOS task for stable operation
+void button_sleep_handle();
+
+/**
+ * To notify users via buzzer
+ * @param variable you want to watch for buzzer triggers
+ * @param Threashold value to trigger the buzzer 
+*/
+void NOTIFY_BUZER(int, int);

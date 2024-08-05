@@ -687,7 +687,7 @@ void MODBUS_push(struct modbus_parameter MD_data)
   mb.task();
 }
 
-void NOTIFY_BUZER(int data, int threshold)
+void NOTIFY_BUZZER(int data, int threshold)
 {
   if (data > threshold)
   {

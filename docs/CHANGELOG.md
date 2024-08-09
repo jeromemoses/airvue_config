@@ -1,5 +1,10 @@
 # ChangeLog for Airvue_config LIB
 
+## [1.2.8] - 2024-8-9
+#### -> Fixed Sensor uart - changed HardWareSerial to SoftWareSerial
+#### -> Added sensor data Serial printing for debugging
+#### -> Fixed - push button sleep mode handler been triggering watchdog timer
+
 ## [1.2.7] - 2024-8-5
 #### -> Added MODBUS functionalities -> MODBUS_init(); , MODBUS_push();
 #### -> Added BUZZER functionalities -> NOTIFY_BUZZER(data, threshold);

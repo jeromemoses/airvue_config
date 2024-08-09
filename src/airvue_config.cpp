@@ -28,7 +28,7 @@ unsigned long delayTime;
 
 #ifdef SENSOR_SERIAL_ENABLE
 SoftwareSerial STM_serial(26, 32);
-HardwareSerial MUX_SERIAL(2); // multiplexer serial port
+SoftwareSerial MUX_SERIAL(MUX_TX, MUX_RX); // multiplexer serial port
 #endif
 
 byte ch2o_received_bytes[9];
@@ -73,12 +73,12 @@ int BUT_LED(bool is_on)
 void sys_startup()
 {
   // Debugging serial initialization
-  Serial.begin(9600, SERIAL_8N1);
+  Serial.begin(115200);
   STM_serial.begin(115200);
 
 #ifdef SENSOR_SERIAL_ENABLE
   // Multiplexer Serial initialization
-  MUX_SERIAL.begin(SENSOR_BAUDRATE, SERIAL_8N1, MUX_TX, MUX_RX);
+  MUX_SERIAL.begin(SENSOR_BAUDRATE);
 #endif
 
   // power button LED pin declaration
@@ -230,13 +230,13 @@ read_again:
     }
 
     // debug code
-    // Serial.print("ch2o RC_BYTES <\t");
-    // for (int j = 0; j < 9; j++)
-    // {
-    //   Serial.print(ch2o_received_bytes[j]);
-    //   Serial.print("\t");
-    // }
-    // Serial.println(">");
+    Serial.print("ch2o RC_BYTES <\t");
+    for (int j = 0; j < 9; j++)
+    {
+      Serial.print(ch2o_received_bytes[j]);
+      Serial.print("\t");
+    }
+    Serial.println(">");
 
     // Serial.print("ch2o RC_HEX <\t");
     // for (int j = 0; j < 9; j++)
@@ -272,13 +272,13 @@ read_again:
     }
 
     //    debug code
-    // Serial.print("PM RC_BYTES <\t");
-    // for (byte j = 0; j < 9; j++)
-    // {
-    //   Serial.print(ps_received_byte[j]);
-    //   Serial.print("\t");
-    // }
-    // Serial.println(">");
+    Serial.print("PM RC_BYTES <\t");
+    for (byte j = 0; j < 9; j++)
+    {
+      Serial.print(ps_received_byte[j]);
+      Serial.print("\t");
+    }
+    Serial.println(">");
 
     // pm1_0
     *res1 = (0x00 * 256) + ps_received_byte[7];
@@ -330,13 +330,13 @@ read_again:
     }
 
     // debug code
-    // Serial.print("co2 RC_BYTES <\t");
-    // for (int j = 0; j < 9; j++)
-    // {
-    //   Serial.print(co2_received_bytes[j]);
-    //   Serial.print("\t");
-    // }
-    // Serial.println(">");
+    Serial.print("co2 RC_BYTES <\t");
+    for (int j = 0; j < 9; j++)
+    {
+      Serial.print(co2_received_bytes[j]);
+      Serial.print("\t");
+    }
+    Serial.println(">");
 
     *CO2 = (co2_received_bytes[2] * 255) + co2_received_bytes[3];
 
@@ -591,7 +591,7 @@ void button_sleep_handle()
   while (digitalRead(BUT_PIN))
   {
     PUSH_BUT_timer++;
-    delay(500);
+    vTaskDelay(250);
     if (PUSH_BUT_timer >= 4)
     {
       sleep_permission = 1;
@@ -608,6 +608,7 @@ void button_sleep_handle()
     // Trigger System OFF after 5 interrupts
     goToPowerOff();
   }
+  return;
 }
 
 void get_stm_data(float *eto, float *h2s, float *nh3, float *no2, float *o2, float *so2)

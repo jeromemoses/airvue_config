@@ -135,4 +135,4 @@ void button_sleep_handle();
  * @param variable you want to watch for buzzer triggers
  * @param Threashold value to trigger the buzzer 
 */
-void NOTIFY_BUZER(int, int);
+void NOTIFY_BUZZER(int, int);

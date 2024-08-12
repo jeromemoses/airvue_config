@@ -157,6 +157,9 @@ void loop()
   delay(1000);
   MODBUS_push(Modbus_DB);
   delay(1000);
+
+  //to control the relay terminal connected through stm32 (1st Relay, 2nd Relay)
+  stm_relay(1,0);
 }
 
 /**

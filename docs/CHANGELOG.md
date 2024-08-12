@@ -1,5 +1,8 @@
 # ChangeLog for Airvue_config LIB
 
+## [1.2.9] - 2024-8-12
+#### -> Fixed Sensor uart - changed HardWareSerial to SoftWareSerial
+
 ## [1.2.8] - 2024-8-9
 #### -> Fixed Sensor uart - changed HardWareSerial to SoftWareSerial
 #### -> Added sensor data Serial printing for debugging

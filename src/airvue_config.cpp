@@ -34,6 +34,7 @@ SoftwareSerial MUX_SERIAL(MUX_TX, MUX_RX); // multiplexer serial port
 byte ch2o_received_bytes[9];
 byte ps_received_byte[24];
 byte co2_received_bytes[9];
+byte TVOC_received_bytes[9];
 uint8_t getppm[REQUEST_CNT] = {0xff, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79};
 float measurement = 0;
 byte buf[RESPONSE_CNT - 1];
@@ -41,6 +42,8 @@ byte cheksum = 0;
 
 int PUSH_BUT_timer = 0;
 bool sleep_permission = 0;
+
+int read_co_flag = 0;
 
 int Power_switch(bool is_on)
 {
@@ -109,6 +112,15 @@ void sys_startup()
   {
     MUX_SERIAL.write(ps_start_QAmode_cmd[i]);
   }
+
+  switch_sensor(EX_TERMINAL_5V);
+  delay(2000);
+  // formaldehyde sensor startup code for Q&A mode
+  for (int i = 0; i < 9; i++)
+  {
+    MUX_SERIAL.write(TVOC_start_QAmode_cmd[i]);
+  }
+
 #endif
   return;
 }
@@ -192,8 +204,10 @@ void writeCommand(uint8_t cmd[], uint8_t *response)
       if (++i > WAIT_READ_TIMES)
       {
         Serial.println("can't get ZE15CO response.");
+        read_co_flag = 1;
         return;
       }
+      read_co_flag = 0;
       delay(WAIT_READ_DELAY);
     }
     MUX_SERIAL.readBytes(response, RESPONSE_CNT);
@@ -363,17 +377,19 @@ void clear_serial()
 
 void read_co(float *CO)
 {
-  MUX_SERIAL.flush();
+co_read_again:
+{
+  // MUX_SERIAL.flush();
   delay(1000);
 
   writeCommand(getppm, buf);
 
-  for (int i = 0; i < 8; i++)
-  {
-    buf[i] = 0x00;
-  }
+  // for (int i = 0; i < 8; i++)
+  // {
+  //   buf[i] = 0x00;
+  // }
 
-  writeCommand(getppm, buf);
+  // writeCommand(getppm, buf);
   // parse
   cheksum = (buf[1] + buf[2] + buf[3] + buf[4] + buf[5] + buf[6] + buf[7]);
   cheksum = (~cheksum) + 1;
@@ -395,6 +411,11 @@ void read_co(float *CO)
   if (*CO < 0)
   {
     *CO = 0.5;
+  }
+}
+  if (read_co_flag)
+  {
+    goto co_read_again;
   }
 }
 #endif
@@ -611,6 +632,27 @@ void button_sleep_handle()
   return;
 }
 
+void stm_relay(bool rly1, bool rly2)
+{
+  if (rly1)
+  {
+    STM_serial.print(3); // relay 1 off on
+  }
+  else
+  {
+    STM_serial.print(4);
+  }
+
+  if (rly1)
+  {
+    STM_serial.print(5);
+  }
+  else
+  {
+    STM_serial.print(6);
+  }
+}
+
 void get_stm_data(float *eto, float *h2s, float *nh3, float *no2, float *o2, float *so2)
 {
   STM_serial.print(1);
@@ -710,5 +752,37 @@ void NOTIFY_BUZZER(int data, int threshold)
     buzzer.tone(NOTE_D4, 250);
     buzzer.tone(NOTE_C4, 250);
     buzzer.noTone();
+  }
+}
+
+void read_TVOC(float *tvoc)
+{
+read_again:
+{
+  if (MUX_SERIAL.write(TVOC_read_cmd, sizeof(TVOC_read_cmd)) == 9)
+  {
+    for (byte i = 0; i < 9; i++)
+    {
+      TVOC_received_bytes[i] = MUX_SERIAL.read();
+    }
+
+    // debug code
+    Serial.print("TVOC RC_BYTES <\t");
+    for (int j = 0; j < 9; j++)
+    {
+      Serial.print(TVOC_received_bytes[j]);
+      Serial.print("\t");
+    }
+    Serial.println(">");
+
+    // Gas concentration value=High byte of concentration *256+ Low byte of concentration
+    *tvoc = (TVOC_received_bytes[6] * 256) + TVOC_received_bytes[7]; // ug/m³ or ppb
+    //*tvoc = *tvoc/1000; // mg/m³ or ppm
+  }
+}
+  delay(1000);
+  while (TVOC_received_bytes[8] == 255)
+  {
+    goto read_again;
   }
 }

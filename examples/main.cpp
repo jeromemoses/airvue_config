@@ -80,6 +80,11 @@ void loop()
   clear_serial();
   read_co2(&co2);
 
+  switch_sensor(EX_TERMINAL_5V);
+  delay(2000);
+  clear_serial();
+  read_TVOC(&tvoc);
+
   read_hs3003(HS_TEMP, &temp);
   read_hs3003(HS_HUMID, &humidity);
 
@@ -108,7 +113,7 @@ void loop()
   Serial.printf("Lux:\t :\t%.3f\n------------------------------\n", lux);
 
   // to set the notification on buzzer for any parameter with threshold
-  NOTIFY_BUZER(HS_TEMP, 28); // buzzer will be trigger if temperature exceeds 28 degree
+  NOTIFY_BUZZER(HS_TEMP, 28); // buzzer will be trigger if temperature exceeds 28 degree
 
   // Follow the below code sequence if you need to enable the modbus
   // creat the structure for modbus parameters the struct is in library by default

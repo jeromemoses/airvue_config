@@ -1,7 +1,9 @@
 # ChangeLog for Airvue_config LIB
 
 ## [1.2.9] - 2024-8-12
-#### -> Fixed Sensor uart - changed HardWareSerial to SoftWareSerial
+#### -> Added TVOC Sensor read functionality -> read_TVOC(*float);
+#### -> Added CO sensor read Error handling functionality -> function will retry to fetch data if its not correct
+#### -> Added relay terminal control functionality via ESP32 -> STM32 
 
 ## [1.2.8] - 2024-8-9
 #### -> Fixed Sensor uart - changed HardWareSerial to SoftWareSerial

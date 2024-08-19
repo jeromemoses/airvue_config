@@ -671,7 +671,7 @@ void get_stm_data(float *eto, float *h2s, float *nh3, float *no2, float *o2, flo
   }
 
   *eto = doc["ETO"];
-  *h2s = doc["HS2"];
+  *h2s = doc["H2S"];
   *nh3 = doc["NH3"];
   *no2 = doc["NO2"];
   *o2 = doc["O2"];

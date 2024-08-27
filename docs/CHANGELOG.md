@@ -1,5 +1,10 @@
 # ChangeLog for Airvue_config LIB
 
+## [1.3.9] - 2024-8-27
+#### -> Added Sensor state checking functionality -> ensor_test_handle();
+#### -> Added a function to get sensor test flag check_sensor(int);
+#### -> Updated example code with all the new features.
+
 ## [1.2.9] - 2024-8-12
 #### -> Added TVOC Sensor read functionality -> read_TVOC(*float);
 #### -> Added CO sensor read Error handling functionality -> function will retry to fetch data if its not correct

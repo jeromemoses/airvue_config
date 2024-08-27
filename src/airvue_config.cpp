@@ -36,9 +36,21 @@ byte ps_received_byte[24];
 byte co2_received_bytes[9];
 byte TVOC_received_bytes[9];
 uint8_t getppm[REQUEST_CNT] = {0xff, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79};
-float measurement = 0;
+float measurement = 0; // co
 byte buf[RESPONSE_CNT - 1];
 byte cheksum = 0;
+
+int PM_time_out = 0;
+int co_time_out = 0;
+int ch2o_time_out = 0;
+int co2_time_out = 0;
+int tvoc_time_out = 0;
+
+bool is_ok_pm = 0;
+bool is_ok_co = 0;
+bool is_ok_ch2o = 0;
+bool is_ok_co2 = 0;
+bool is_ok_tvoc = 0;
 
 int PUSH_BUT_timer = 0;
 bool sleep_permission = 0;
@@ -205,6 +217,7 @@ void writeCommand(uint8_t cmd[], uint8_t *response)
       {
         Serial.println("can't get ZE15CO response.");
         read_co_flag = 1;
+        is_ok_co = 1;
         return;
       }
       read_co_flag = 0;
@@ -784,5 +797,182 @@ read_again:
   while (TVOC_received_bytes[8] == 255)
   {
     goto read_again;
+  }
+}
+
+int Sensor_test_handle()
+{
+  if (Serial.read() == '7')
+  {
+    ///// PM sensor testing block /////
+    switch_sensor(PM_PORT);
+    vTaskDelay(500);
+    clear_serial();
+
+  PM_read_again:
+  {
+    PM_time_out += 1;
+    MUX_SERIAL.flush();
+    vTaskDelay(500);
+
+    if (MUX_SERIAL.write(ps_read_cmd, sizeof(ps_read_cmd)) == 9)
+    {
+      for (byte i = 0; i < 9; i++)
+      {
+        ps_received_byte[i] = MUX_SERIAL.read();
+      }
+    }
+  }
+    if (ps_received_byte[8] != 255)
+    {
+      is_ok_pm = 1;
+    }
+
+    vTaskDelay(500);
+    while ((ps_received_byte[8] == 255) && (PM_time_out <= 4) && !(is_ok_pm))
+    {
+      goto PM_read_again;
+    }
+
+    ///// ch2o sensor testing block /////
+    switch_sensor(CH2O_PORT);
+    vTaskDelay(500);
+    clear_serial();
+  ch2o_read_again:
+  {
+    ch2o_time_out += 1;
+    // clearing serial buffers
+    while (MUX_SERIAL.available() > 0)
+    {
+      for (int i = 0; i < 5; i++)
+      {
+        for (int j = 0; j < 5; j++)
+        {
+          char t = Serial.read();
+          vTaskDelay(500);
+        }
+        vTaskDelay(500);
+      }
+      break;
+    }
+    vTaskDelay(500);
+
+    MUX_SERIAL.write(ch2o_read_cmd, sizeof(ch2o_read_cmd));
+    vTaskDelay(500);
+    if (MUX_SERIAL.write(ch2o_return_cmd, sizeof(ch2o_return_cmd)) == 9)
+    {
+      for (byte i = 0; i < 9; i++)
+      {
+        ch2o_received_bytes[i] = MUX_SERIAL.read();
+      }
+    }
+  }
+    if (ch2o_received_bytes[8] != 255)
+    {
+      is_ok_ch2o = 1;
+    }
+    vTaskDelay(500);
+    while ((ch2o_received_bytes[8] == 255) && (ch2o_time_out <= 4) && !(is_ok_ch2o))
+    {
+      goto ch2o_read_again;
+    }
+
+    ///// Co sensor testing block /////
+    switch_sensor(CO_PORT);
+    vTaskDelay(500);
+    clear_serial();
+  co_read_again:
+  {
+    co_time_out += 1;
+    // MUX_SERIAL.flush();
+    vTaskDelay(500);
+
+    writeCommand(getppm, buf);
+    cheksum = (buf[1] + buf[2] + buf[3] + buf[4] + buf[5] + buf[6] + buf[7]);
+    cheksum = (~cheksum) + 1;
+  }
+    if ((read_co_flag) && !(is_ok_co) && (co_time_out <= 4))
+    {
+      goto co_read_again;
+    }
+
+    ///// Co2 sensor testng block /////
+    switch_sensor(CO2_PORT);
+    vTaskDelay(500);
+    clear_serial();
+  co2_read_again:
+  {
+    co2_time_out += 1;
+    MUX_SERIAL.flush();
+    vTaskDelay(500);
+
+    if (MUX_SERIAL.write(co2_start_cmd, sizeof(co2_start_cmd)) == 9)
+    {
+      for (byte i = 0; i < 9; i++)
+      {
+        co2_received_bytes[i] = MUX_SERIAL.read();
+      }
+    }
+  }
+    if (co2_received_bytes[8] != 255)
+    {
+      is_ok_co2 = 1;
+    }
+    vTaskDelay(500);
+    while ((co2_received_bytes[8] == 255) && (co2_time_out <= 4) && !(is_ok_co2))
+    {
+      goto co2_read_again;
+    }
+
+    ///// Tvoc sensor testing block /////
+    switch_sensor(EX_TERMINAL_5V);
+    vTaskDelay(500);
+    clear_serial();
+  tvoc_read_again:
+  {
+    tvoc_time_out += 1;
+    if (MUX_SERIAL.write(TVOC_read_cmd, sizeof(TVOC_read_cmd)) == 9)
+    {
+      for (byte i = 0; i < 9; i++)
+      {
+        TVOC_received_bytes[i] = MUX_SERIAL.read();
+      }
+    }
+  }
+    vTaskDelay(500);
+    while ((TVOC_received_bytes[8] == 255) && (tvoc_time_out <= 4) && !(is_ok_tvoc))
+    {
+      goto tvoc_read_again;
+    }
+  }
+  return 1;
+}
+
+int check_sensor(int test_at)
+{
+  switch (test_at)
+  {
+  case PM:
+    return is_ok_pm;
+    break;
+
+  case CO:
+    return is_ok_co;
+    break;
+
+  case CH2O:
+    return is_ok_ch2o;
+    break;
+
+  case CO2:
+    return is_ok_co2;
+    break;
+
+  case TVOC:
+    return is_ok_tvoc;
+    break;
+  
+  default:
+    break;
   }
 }

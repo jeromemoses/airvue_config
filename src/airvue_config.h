@@ -153,3 +153,17 @@ void stm_relay(bool , bool);
  * @param float* -> TVOC reading example -> read_TVOC(&tvoc);
  */
 void read_TVOC(float*);
+
+/**
+ * TO handle the sensor read test
+ */
+int Sensor_test_handle();
+
+
+enum sensor_tag{PM, CO, CH2O, CO2, TVOC}; 
+/**
+ * To check the sensor whether it is working or not
+ * @param name of the sensor you want to check
+ * Example: 
+ */
+int check_sensor(int);

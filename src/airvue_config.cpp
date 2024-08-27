@@ -975,4 +975,5 @@ int check_sensor(int test_at)
   default:
     break;
   }
+  return 0;
 }
